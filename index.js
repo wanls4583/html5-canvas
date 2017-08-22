@@ -67,8 +67,8 @@ var gt = Date.now();
                         y: Math.floor(this.wrapSize.height * Math.random()),
                         vx: 0, //x轴打散增量
                         vy: 0, //y轴打散增量
-                        ax: .86 - Math.random() * .08, //x轴聚合速度系数
-                        ay: .86 - Math.random() * .08, //y轴聚合速度系数
+                        ax: .66 - Math.random() * .08, //x轴聚合速度系数
+                        ay: .16 - Math.random() * .08, //y轴聚合速度系数
                         nx: .4 + Math.random() * .3, //x轴打散弹力系数
                         ny: .3 + Math.random() * .2, //y轴打散弹力系数
                     }
@@ -111,11 +111,11 @@ var gt = Date.now();
                             current.y += (target.y - current.y) * current.ay;
                         }
                     }
-                    index = current.y * width * 4 + current.x * 4;
+                    index = (current.y-1>0 ? current.y-1 : 0) * width * 4 + current.x * 4;
                     try{
 	                	imgData.data.set(self.imgData[i][j], Math.floor(index));
 	                }catch(e){
-	                	alert(current.x+':'+current.y)
+	                	console.log('gather',current.x+':'+current.y)
 	                }
                 }
             }
@@ -135,7 +135,7 @@ var gt = Date.now();
                     current.x += current.vx;
                     current.y += current.vy;
                     if (current.y >= height) {
-                    	current.y = height;
+                    	current.y = height-1;
                         current.vy = -current.ny * current.vy;
                         if (Math.abs(current.vy) <= 1) {
                             current.vy = 0;
@@ -144,14 +144,21 @@ var gt = Date.now();
                     } else {
                         current.vy += 1;
                     }
-
-                    if (Math.abs(current.vx) <= 1 || current.x<0 || current.x>width) 
+                    if(current.y < 0){
+                        current.y = 0;
+                    }
+                    if(current.x < 0){
+                        current.x = 0;
+                    }else if(current.x >= width){
+                        current.x = width-1;
+                    }
+                    if (Math.abs(current.vx) <= 1 || current.x<=0 || current.x>=width) 
                     	current.vx = 0;
-                    index = current.y * width * 4 + current.x * 4;
+                    index = (current.y-1>0 ? current.y-1 : 0) * width * 4 + current.x * 4;
                     try{
 	                	imgData.data.set(self.imgData[i][j], Math.floor(index));
 	                }catch(e){
-	                	alert(current.x+':'+current.y)
+	                	console.log('breakUp',current.x+':'+current.y)
 	                }
                 }
             }
@@ -159,6 +166,7 @@ var gt = Date.now();
             self.ctx.putImageData(imgData, 0, 0);
         },
         onClick: function() {
+            // window.location.reload();
         	var self = Grain;
             self.reverse = !self.reverse;
             if (!self.reverse) {
