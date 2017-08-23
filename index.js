@@ -6,7 +6,7 @@ var gt = Date.now();
         wrapSize: null,
         ctx: null,
         reverse: true, //是否重组
-        imgSrc: 'ryan.gif',
+        imgSrc: 'pic.jpg',
         imgData: [],
         initailData: null,
         initPosData: [],
@@ -59,7 +59,7 @@ var gt = Date.now();
                 this.currentData[i] = [];
                 for (var j = 0; j < this.imgSize.width; j++) {
                     var begin = this.imgSize.width * i * 4 + j * 4;
-                    this.imgData[i][j] = imgData.data.slice(begin, begin + 4);
+                    this.imgData[i][j] = imgData.data.subarray(begin, begin + 4);
                     this.initPosData[i][j] = {
                         x: (this.wrapSize.width - this.imgSize.width) / 2 + j,
                         y: i+50
@@ -186,7 +186,7 @@ var gt = Date.now();
         },
         onClick: function() {
         	var self = Grain;
-            self.wrapSize.height = Math.floor(window.innerHeight * 0.8);
+            self.wrapSize.height = self.imgSize.height * 3 > window.innerHeight ? window.innerHeight - 10: self.imgSize.height * 3;
             self.reverse = !self.reverse;
             if (!self.reverse) {
                 for (var i = 0; i < self.imgSize.height; i++) {
