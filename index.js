@@ -6,11 +6,13 @@ var gt = Date.now();
         wrapSize: null,
         ctx: null,
         reverse: true, //是否重组
+        imgSrc: 'ryan.gif',
         imgData: [],
         initailData: null,
         initPosData: [],
         currentData: [],
         th: 0, //正在准备聚合的行
+        beginTime: Date.now(),
         init: function() {
             var self = this;
             if (!window.$) {
@@ -26,7 +28,7 @@ var gt = Date.now();
             window.onload = function() {
                 var img = new Image();
                 var wrap = $('.canvasWrap')[0];
-                img.src = 'ryan.gif';
+                img.src = self.imgSrc;
                 self.canvas = $('#canvas');
                 self.wrapSize = {
                     width: wrap.clientWidth,
@@ -67,8 +69,8 @@ var gt = Date.now();
                         y: Math.floor(this.wrapSize.height * Math.random()),
                         vx: 0, //x轴打散增量
                         vy: 0, //y轴打散增量
-                        ax: .66 - Math.random() * .08, //x轴聚合速度系数
-                        ay: .16 - Math.random() * .08, //y轴聚合速度系数
+                        ax: .2 - Math.random() * .08, //x轴聚合速度系数
+                        ay: .2 - Math.random() * .08, //y轴聚合速度系数
                         nx: .4 + Math.random() * .3, //x轴打散弹力系数
                         ny: .3 + Math.random() * .2, //y轴打散弹力系数
                     }
@@ -79,14 +81,23 @@ var gt = Date.now();
             this.ctx.clearRect(0, 0, this.wrapSize.width, this.wrapSize.height);
         },
         animate: function(time) {
-            if (Grain.reverse)
+            var fnName = '';
+            if (Grain.reverse){
                 Grain.gather();
-            else
+                fnName = 'gather';
+            }
+            else{
                 Grain.breakUp();
+                fnName = 'breakUp';
+            }
             requestAnimationFrame(Grain.animate);
+            if(location.search.indexOf('isLog')!=-1)
+                console.log('fps '+fnName+':',Date.now() - Grain.beginTime);
+            Grain.beginTime = Date.now();
         },
         //聚合回调
         gather: function() {
+            var t1 = Date.now();
             var self = this;
             var width = self.wrapSize.width;
             var height = self.wrapSize.height;
@@ -95,8 +106,11 @@ var gt = Date.now();
             for (var i = 0; i < self.imgSize.height; i++) {
                 for (var j = 0; j < self.imgSize.width; j++) {
                     var current = self.currentData[i][j];
-                    var index = 0;
                     var target = self.initPosData[i][j];
+                    var index = 0;
+                    var x = 0;
+                    var y = 0;
+
                     if (i < self.th) {
                         var xdiff = target.x - current.x;
                         var ydiff = target.y - current.y;
@@ -111,19 +125,20 @@ var gt = Date.now();
                             current.y += (target.y - current.y) * current.ay;
                         }
                     }
-                    index = (current.y-1>0 ? current.y-1 : 0) * width * 4 + current.x * 4;
-                    try{
-	                	imgData.data.set(self.imgData[i][j], Math.floor(index));
-	                }catch(e){
-	                	console.log('gather',current.x+':'+current.y)
-	                }
+
+                    x = Math.floor(current.x);
+                    y = Math.floor(current.y);
+                    index = (y-1>0 ? y-1 : 0) * width * 4 + x * 4;
+	                imgData.data.set(self.imgData[i][j], index);
                 }
             }
             self.clear();
             self.ctx.putImageData(imgData, 0, 0);
+            // console.log('gater caulate:',Date.now() - t1);
         },
         //打散回调
         breakUp: function() {
+            var t1 = Date.now();
             var self = this;
             var width = self.wrapSize.width;
             var height = self.wrapSize.height;
@@ -135,35 +150,39 @@ var gt = Date.now();
                     current.x += current.vx;
                     current.y += current.vy;
                     if (current.y >= height) {
-                    	current.y = height-1;
                         current.vy = -current.ny * current.vy;
-                        if (Math.abs(current.vy) <= 1) {
+                        if (Math.abs(current.vy) <= 2) {
                             current.vy = 0;
                         }
                         current.vx *= current.nx;
                     } else {
                         current.vy += 1;
                     }
+
                     if(current.y < 0){
                         current.y = 0;
+                    }else if(current.y >= height){
+                        current.y = height - 1;
                     }
+
                     if(current.x < 0){
                         current.x = 0;
                     }else if(current.x >= width){
                         current.x = width-1;
                     }
+
                     if (Math.abs(current.vx) <= 1 || current.x<=0 || current.x>=width) 
                     	current.vx = 0;
-                    index = (current.y-1>0 ? current.y-1 : 0) * width * 4 + current.x * 4;
-                    try{
-	                	imgData.data.set(self.imgData[i][j], Math.floor(index));
-	                }catch(e){
-	                	console.log('breakUp',current.x+':'+current.y)
-	                }
+
+                    x = Math.floor(current.x);
+                    y = Math.floor(current.y);
+                    index = (y-1>0 ? y-1 : 0) * width * 4 + x * 4;
+                    imgData.data.set(self.imgData[i][j], index);
                 }
             }
             self.clear();
             self.ctx.putImageData(imgData, 0, 0);
+            // console.log('breakUp caulate:',Date.now() - t1);
         },
         onClick: function() {
             // window.location.reload();
@@ -178,7 +197,7 @@ var gt = Date.now();
                     }
                 }
             } else {
-                self.th = 1;
+                self.th = 0;
             }
         }
     }
