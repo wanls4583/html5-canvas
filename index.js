@@ -185,8 +185,8 @@ var gt = Date.now();
             // console.log('breakUp caulate:',Date.now() - t1);
         },
         onClick: function() {
-            // window.location.reload();
         	var self = Grain;
+            self.wrapSize.height = Math.floor(window.innerHeight * 0.8);
             self.reverse = !self.reverse;
             if (!self.reverse) {
                 for (var i = 0; i < self.imgSize.height; i++) {
