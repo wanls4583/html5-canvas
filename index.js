@@ -8,6 +8,12 @@ var gt = Date.now();
         reverse: true, //是否重组
         imgSrc: 'pic.jpg',
         imgData: [],
+        offCanvas1 : document.createElement("canvas"),//离屏对象
+        offCtx1 : null,//离屏对象上下文
+        offCanvas2 : document.createElement("canvas"),//离屏对象
+        offCtx2 : null,//离屏对象上下文
+        odd: false,
+        fresh: true,
         initailData: null,
         initPosData: [],
         currentData: [],
@@ -15,6 +21,8 @@ var gt = Date.now();
         beginTime: Date.now(),
         init: function() {
             var self = this;
+            self.offCtx1 = self.offCanvas1.getContext('2d')//离屏对象上下文
+            self.offCtx2 = self.offCanvas2.getContext('2d')//离屏对象上下文
             if (!window.$) {
                 window.$ = function(selector) {
                     var firstChar = selector.charAt(0);
@@ -41,10 +49,14 @@ var gt = Date.now();
                     }
                     self.canvas.setAttribute('width', self.wrapSize.width + 'px');
                     self.canvas.setAttribute('height', self.wrapSize.height + 'px');
+                    self.offCanvas1.setAttribute('width', self.wrapSize.width + 'px');
+                    self.offCanvas1.setAttribute('height', self.wrapSize.height + 'px');
+                    self.offCanvas2.setAttribute('width', self.wrapSize.width + 'px');
+                    self.offCanvas2.setAttribute('height', self.wrapSize.height + 'px');
                     self.ctx = self.canvas.getContext("2d");
                     self.ctx.drawImage(img, 0, 0);
                     self.initData();
-                    self.clear();
+                    self.clear(self.ctx);
                     self.animate();
                     window.onclick = self.onClick;
                 }
@@ -77,8 +89,8 @@ var gt = Date.now();
                 }
             }
         },
-        clear: function() {
-            this.ctx.clearRect(0, 0, this.wrapSize.width, this.wrapSize.height);
+        clear: function(ctx) {
+            ctx.clearRect(0, 0, this.wrapSize.width, this.wrapSize.height);
         },
         animate: function(time) {
             var fnName = '';
@@ -103,7 +115,7 @@ var gt = Date.now();
             var height = self.wrapSize.height;
             var imgData = self.ctx.createImageData(width, height);
             self.th < height && ++self.th;
-            for (var i = 0; i < self.imgSize.height; i++) {
+            for (var i = /*self.odd?1:*/0; i < self.imgSize.height; /*i+=2*/i++) {
                 for (var j = 0; j < self.imgSize.width; j++) {
                     var current = self.currentData[i][j];
                     var target = self.initPosData[i][j];
@@ -117,23 +129,36 @@ var gt = Date.now();
                         if (Math.abs(xdiff) < .5) {
                             current.x = target.x;
                         } else {
-                            current.x += (target.x - current.x) * current.ax;
+                            current.x += (target.x - current.x ) * current.ax;
                         }
                         if (Math.abs(ydiff) < .5) {
                             current.y = target.y;
                         } else {
-                            current.y += (target.y - current.y) * current.ay;
+                            current.y += (target.y - current.y ) * current.ay;
                         }
                     }
 
-                    x = Math.floor(current.x);
-                    y = Math.floor(current.y);
+                    x = (current.x - 0.5) | 0;
+                    y = (current.y - 0.5) | 0;
                     index = (y-1>0 ? y-1 : 0) * width * 4 + x * 4;
 	                imgData.data.set(self.imgData[i][j], index);
                 }
             }
-            self.clear();
+            self.clear(self.ctx);
             self.ctx.putImageData(imgData, 0, 0);
+            // if(self.odd){
+            //     self.clear(self.offCtx1);
+            //     self.offCtx1.drawImage(self.canvas,0,0);
+            //     if(!self.fresh)
+            //         self.ctx.drawImage(self.offCanvas2,0,0);
+            // }else{
+            //     self.clear(self.offCtx2);
+            //     self.offCtx2.drawImage(self.canvas,0,0);
+            //     if(!self.fresh)
+            //         self.ctx.drawImage(self.offCanvas1,0,0);
+            // }
+            // self.fresh = false;
+            // self.odd = !self.odd;
             // console.log('gater caulate:',Date.now() - t1);
         },
         //打散回调
@@ -143,7 +168,7 @@ var gt = Date.now();
             var width = self.wrapSize.width;
             var height = self.wrapSize.height;
             var imgData = self.ctx.createImageData(width, height);
-            for (var i = 0; i < self.imgSize.height; i++) {
+            for (var i = /*self.odd?1:*/0; i < self.imgSize.height; /*i+=2*/i++) {
                 for (var j = 0; j < self.imgSize.width; j++) {
                     var current = self.currentData[i][j];
                     var index = 0;
@@ -174,18 +199,32 @@ var gt = Date.now();
                     if (Math.abs(current.vx) <= 1 || current.x<=0 || current.x>=width) 
                     	current.vx = 0;
 
-                    x = Math.floor(current.x);
-                    y = Math.floor(current.y);
+                    x = (current.x - 0.5) | 0;
+                    y = (current.y - 0.5) | 0;
                     index = (y-1>0 ? y-1 : 0) * width * 4 + x * 4;
                     imgData.data.set(self.imgData[i][j], index);
                 }
             }
-            self.clear();
+            self.clear(self.ctx);
             self.ctx.putImageData(imgData, 0, 0);
+            // if(self.odd){
+            //     self.clear(self.offCtx1);
+            //     self.offCtx1.drawImage(self.canvas,0,0);
+            //     if(!self.fresh)
+            //         self.ctx.drawImage(self.offCanvas2,0,0);
+            // }else{
+            //     self.clear(self.offCtx2);
+            //     self.offCtx2.drawImage(self.canvas,0,0);
+            //     if(!self.fresh)
+            //         self.ctx.drawImage(self.offCanvas1,0,0);
+            // }
+            // self.fresh = false;
+            // self.odd = !self.odd;
             // console.log('breakUp caulate:',Date.now() - t1);
         },
         onClick: function() {
         	var self = Grain;
+            self.fresh = true;
             self.wrapSize.height = self.imgSize.height * 3 > window.innerHeight ? window.innerHeight - 10: self.imgSize.height * 3;
             self.reverse = !self.reverse;
             if (!self.reverse) {
